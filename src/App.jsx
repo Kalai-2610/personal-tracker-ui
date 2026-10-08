@@ -6,7 +6,7 @@ import Login from './pages/Login';
 import Users from './pages/Users';
 import Lookups from './pages/Lookups';
 import Transactions from './pages/Transactions';
-import EmptyPage from './pages/EmptyPage';
+import Home from './pages/Home';
 import { useAuth } from './context/AuthContext';
 
 export default function App() {
@@ -19,8 +19,7 @@ export default function App() {
     <Route path="/login" element={<Login theme={theme} onToggleTheme={toggle}/>} />
     <Route element={<ProtectedRoute/>}><Route element={<Layout theme={theme} onToggleTheme={toggle}/>}> 
       <Route index element={<Navigate to={landing} replace/>}/>
-      <Route path="home" element={user?.isSystem ? <Navigate to="/users" replace/> : <EmptyPage title="Home" description="Your personal finance workspace."/>}/>
-      <Route path="summary" element={<EmptyPage title="Summary" description="Your financial summary will appear here."/>}/>
+      <Route path="home" element={user?.isSystem ? <Navigate to="/users" replace/> : <Home/>}/>
       <Route path="transactions" element={<Transactions/>}/>
       <Route path="lookups" element={<Lookups/>}/>
       <Route path="users" element={user?.isSystem ? <Users/> : <Navigate to="/home" replace/>}/>

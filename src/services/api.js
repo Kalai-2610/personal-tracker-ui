@@ -106,7 +106,7 @@ export const lookupsApi = {
 };
 
 export const transactionsApi = {
-  list: (params = {}) => apiRequest(`/api/v1/transactions?${new URLSearchParams(params)}`),
+  list: (payload = {}) => apiRequest('/api/v1/transactions', { method: 'QUERY', body: JSON.stringify(payload) }),
   create: (payload) => apiRequest('/api/v1/transactions', { method: 'POST', body: JSON.stringify(payload) }),
   get: (id) => apiRequest(`/api/v1/transactions/${id}`),
   update: (id, payload) => apiRequest(`/api/v1/transactions/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),

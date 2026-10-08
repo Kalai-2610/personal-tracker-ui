@@ -75,7 +75,8 @@ label {
     color: var(--text);
 }
 
-input {
+input,
+select {
     width: 100%;
     border: 1px solid var(--border);
     border-radius: 9px;
@@ -86,7 +87,8 @@ input {
     transition: .15s;
 }
 
-input:focus {
+input:focus,
+select:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(84, 55, 243, .12);
 }
@@ -573,6 +575,16 @@ nav {
 
 .lookup-dropdown-option svg {
     flex: 0 0 auto;
+}
+
+.lookup-dropdown-option.disabled {
+    color: var(--muted);
+    cursor: default;
+    opacity: .75;
+}
+
+.lookup-dropdown-option.disabled:hover {
+    background: transparent;
 }
 
 .topbar-spacer {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Home, BarChart3, ArrowLeftRight, ListTree, Users, LogOut, Menu, X, WalletCards, Sun, Moon, KeyRound, ChevronUp } from 'lucide-react';
+import { Home, ArrowLeftRight, ListTree, Users, LogOut, Menu, X, WalletCards, Sun, Moon, KeyRound, ChevronUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { usersApi } from '../services/api';
 
@@ -16,7 +16,6 @@ export default function Layout({ theme, onToggleTheme }) {
   const isSystem = !!user?.isSystem;
   const links = isSystem ? [{ to: '/users', label: 'Users', icon: Users }] : [
     { to: '/home', label: 'Home', icon: Home },
-    { to: '/summary', label: 'Summary', icon: BarChart3 },
     { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
     { to: '/lookups', label: 'LookUps', icon: ListTree }
   ];
