@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
 
 export const getStoredAuth = () => {
@@ -9,26 +11,41 @@ export const setStoredAuth = (auth) => localStorage.setItem('personalTrackerAuth
 export const clearStoredAuth = () => localStorage.removeItem('personalTrackerAuth');
 let refreshPromise = null;
 
-async function parseResponse(response) {
-  const text = await response.text();
-  let body = null;
-  try { body = text ? JSON.parse(text) : null; } catch { body = text; }
-  if (!response.ok) {
-    const message = body?.message || body?.error || body?.detail || `Request failed (${response.status})`;
-    const error = new Error(message);
-    error.status = response.status;
-    error.body = body;
-    throw error;
-  }
-  return body;
+const apiClient = axios.create({ baseURL: API_BASE_URL });
+
+function normalizeHeaders(headers = {}) {
+  if (headers instanceof Headers) return Object.fromEntries(headers.entries());
+  return { ...headers };
+}
+
+function normalizeBody(body) {
+  if (!body || body instanceof FormData) return body;
+  if (typeof body !== 'string') return body;
+  try { return JSON.parse(body); } catch { return body; }
+}
+
+function normalizeAxiosError(error) {
+  if (!axios.isAxiosError(error)) throw error;
+  const body = error.response?.data;
+  const message = body?.message || body?.error || body?.detail || error.message || `Request failed (${error.response?.status || 'network'})`;
+  const normalized = new Error(message);
+  normalized.status = error.response?.status;
+  normalized.body = body;
+  throw normalized;
 }
 
 async function sendRequest(path, options, auth) {
-  const headers = new Headers(options.headers || {});
-  if (options.body && !(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
-  if (auth?.access_token) headers.set('Authorization', `Bearer ${auth.access_token}`);
-  if (auth?.sessionId) headers.set('sessionId', auth.sessionId);
-  return parseResponse(await fetch(`${API_BASE_URL}${path}`, { ...options, headers }));
+  const data = normalizeBody(options.body);
+  const headers = normalizeHeaders(options.headers);
+  if (data && !(data instanceof FormData)) headers['Content-Type'] = 'application/json';
+  if (auth?.access_token) headers.Authorization = `Bearer ${auth.access_token}`;
+  if (auth?.sessionId) headers.sessionId = auth.sessionId;
+  try {
+    const response = await apiClient.request({ url: path, method: options.method || 'GET', headers, data });
+    return response.data;
+  } catch (error) {
+    normalizeAxiosError(error);
+  }
 }
 
 function dispatchAuthEvent(name, detail) {
@@ -40,10 +57,16 @@ async function refreshAuth(auth) {
   if (latestAuth?.access_token && latestAuth.access_token !== auth?.access_token) return latestAuth;
   if (!refreshPromise) {
     refreshPromise = (async () => {
-      const headers = new Headers();
-      if (auth?.access_token) headers.set('Authorization', `Bearer ${auth.access_token}`);
-      if (auth?.sessionId) headers.set('sessionId', auth.sessionId);
-      const result = await parseResponse(await fetch(`${API_BASE_URL}/auth/v1/refresh_token`, { method: 'GET', headers }));
+      const headers = {};
+      if (auth?.access_token) headers.Authorization = `Bearer ${auth.access_token}`;
+      if (auth?.sessionId) headers.sessionId = auth.sessionId;
+      let result;
+      try {
+        const response = await apiClient.get('/auth/v1/refresh_token', { headers });
+        result = response.data;
+      } catch (error) {
+        normalizeAxiosError(error);
+      }
       if (!result?.access_token) throw new Error('Token refresh did not return an access token.');
       const refreshedAuth = { ...auth, ...result };
       setStoredAuth(refreshedAuth);
