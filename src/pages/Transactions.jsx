@@ -5,6 +5,7 @@ import { lookupsApi, transactionsApi } from '../services/api';
 const LOOKUP_TYPES = ['account', 'type', 'category', 'sub_category', 'payment_mode'];
 const FILTERS = [['account', 'Account'], ['type', 'Type'], ['category', 'Category'], ['payment_mode', 'Payment mode']];
 const FORM_DEFAULTS = { date: '', description: '', account: '', type: '', category: '', sub_category: '', payment_mode: '', amount: '' };
+const FILTER_DEFAULTS = { account: [], type: '', category: [], payment_mode: [] };
 const SUMMARY_GROUPS = [
   ['year', 'Year'],
   ['year_type', 'Year and type'],
@@ -43,7 +44,7 @@ const idValue = value => {
 };
 const name = value => typeof value === 'object' && value ? value.name || '—' : value || '—';
 const allLabel = label => `All ${label === 'Category' ? 'categories' : `${label.toLowerCase()}s`}`;
-const countLabel = label => label === 'Category' ? 'categories' : `${label.toLowerCase()}s`;
+const cloneFilters = filters => ({ ...filters, account: [...filters.account], category: [...filters.category], payment_mode: [...filters.payment_mode] });
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -138,8 +139,8 @@ function TransactionDropdown({ label, value, options, placeholder, emptyLabel = 
       const trigger = triggerRef.current;
       const menu = menuRef.current;
       if (!trigger || !menu) return;
-      const dialog = rootRef.current?.closest('.transaction-dialog');
-      const bounds = dialog?.getBoundingClientRect() || { top: 0, bottom: window.innerHeight };
+      const boundary = rootRef.current?.closest('.transaction-dialog, .summary-more-menu, .transaction-filter-menu');
+      const bounds = boundary?.getBoundingClientRect() || { top: 0, bottom: window.innerHeight };
       const triggerBounds = trigger.getBoundingClientRect();
       const availableMenuHeight = Math.min(menu.scrollHeight, 220, window.innerHeight * .35);
       const spaceBelow = bounds.bottom - triggerBounds.bottom;
@@ -207,10 +208,11 @@ export default function Transactions() {
   const [summaryFilters, setSummaryFilters] = useState(SUMMARY_DEFAULTS);
   const [activeSummaryGroup, setActiveSummaryGroup] = useState('year');
   const [options, setOptions] = useState({});
-  const [filters, setFilters] = useState({ account: [], type: '', category: [], payment_mode: [] });
+  const [filters, setFilters] = useState(FILTER_DEFAULTS);
+  const [draftFilters, setDraftFilters] = useState(FILTER_DEFAULTS);
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
-  const [openFilter, setOpenFilter] = useState('');
+  const [listFiltersOpen, setListFiltersOpen] = useState(false);
   const [summaryMoreOpen, setSummaryMoreOpen] = useState(false);
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -424,19 +426,21 @@ export default function Transactions() {
 
   const changeSummaryGroup = (groupBy) => {
     const now = new Date();
-    setSummaryFilters(current => ({
-      ...current,
+    const nextFilters = {
+      ...summaryFilters,
       group_by: groupBy,
-      year: YEAR_REQUIRED_GROUPS.has(groupBy) && !current.year ? String(now.getFullYear()) : current.year
-    }));
+      year: YEAR_REQUIRED_GROUPS.has(groupBy) && !summaryFilters.year ? String(now.getFullYear()) : summaryFilters.year
+    };
+    setSummaryFilters(nextFilters);
+    loadSummary(nextFilters);
   };
 
   const updateSummaryFilter = (key, value) => setSummaryFilters(current => ({
-    ...current,
-    [key]: value,
-    ...(key === 'type' ? { category: '', sub_category: '' } : {}),
-    ...(key === 'category' ? { sub_category: '' } : {})
-  }));
+      ...current,
+      [key]: value,
+      ...(key === 'type' ? { category: '', sub_category: '' } : {}),
+      ...(key === 'category' ? { sub_category: '' } : {})
+    }));
 
   const submitSummaryFilters = (event) => {
     event.preventDefault();
@@ -460,37 +464,27 @@ export default function Transactions() {
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const firstResult = total ? (currentPage - 1) * pageSize + 1 : 0;
   const lastResult = Math.min(currentPage * pageSize, total);
-  const updateFilter = (key, value) => {
-    setFilters(current => ({
+  const updateDraftFilter = (key, value) => {
+    setDraftFilters(current => ({
       ...current,
       [key]: value,
       ...(key === 'type' ? { category: [] } : {})
     }));
+  };
+  const applyListFilters = () => {
+    setFilters(cloneFilters(draftFilters));
     setPage(1);
-    setOpenFilter('');
+    setListFiltersOpen(false);
   };
-  const toggleMultiFilter = (key, value) => {
-    setFilters(current => {
-      const selectedValues = current[key] || [];
-      const nextValues = selectedValues.includes(value)
-        ? selectedValues.filter(selectedValue => selectedValue !== value)
-        : [...selectedValues, value];
-      return { ...current, [key]: nextValues };
-    });
+  const resetListFilters = () => {
+    const nextFilters = cloneFilters(FILTER_DEFAULTS);
+    setDraftFilters(nextFilters);
+    setFilters(nextFilters);
     setPage(1);
+    setListFiltersOpen(false);
   };
-  const filterLabel = (key, label) => {
-    if (Array.isArray(filters[key])) {
-      const selectedValues = filters[key];
-      if (!selectedValues.length) return allLabel(label);
-      if (selectedValues.length === 1) return (options[key] || []).find(option => idValue(option._id) === selectedValues[0])?.name || allLabel(label);
-      return `${selectedValues.length} ${countLabel(label)}`;
-    }
-    const selectedOption = (options[key] || []).find(option => idValue(option._id) === filters[key]);
-    return selectedOption?.name || allLabel(label);
-  };
-  const filterOptions = (key) => {
-    if (key === 'category') return lookupOptions(options, key, filters.type);
+  const draftFilterOptions = (key) => {
+    if (key === 'category') return lookupOptions(options, key, draftFilters.type);
     return lookupOptions(options, key);
   };
   const formCategoryOptions = lookupOptions(options, 'category', form.type);
@@ -502,7 +496,8 @@ export default function Transactions() {
   const paymentModeOptions = lookupOptions(options, 'payment_mode').map(option => ({ value: idValue(option._id), label: option.name }));
   const summaryCategoryOptions = lookupOptions(options, 'category', summaryFilters.type).map(option => ({ value: idValue(option._id), label: option.name }));
   const summarySubCategoryOptions = lookupOptions(options, 'sub_category', summaryFilters.category).map(option => ({ value: idValue(option._id), label: option.name }));
-  const additionalSummaryCount = ['month', 'account', 'type', 'category', 'sub_category', 'payment_mode'].filter(key => summaryFilters[key]).length;
+  const listFilterCount = (filters.account?.length || 0) + (filters.category?.length || 0) + (filters.payment_mode?.length || 0) + (filters.type ? 1 : 0);
+  const summaryFilterCount = ['year', 'start_date', 'end_date', 'month', 'account', 'type', 'category', 'sub_category', 'payment_mode'].filter(key => summaryFilters[key]).length;
   const summaryColumns = SUMMARY_COLUMNS[activeSummaryGroup] || SUMMARY_COLUMNS.year;
   const summaryTotal = summaryRows.reduce((totalAmount, row) => totalAmount + (Number(row.total_amount) || 0), 0);
   const summaryCount = summaryRows.reduce((totalCount, row) => totalCount + (Number(row.count) || 0), 0);
@@ -536,45 +531,34 @@ export default function Transactions() {
     </div>
     {view === 'summary' ? <form className="summary-toolbar" onSubmit={submitSummaryFilters}>
       <div className="summary-toolbar-field"><span>Summary type</span><TransactionDropdown label="Summary type" value={summaryFilters.group_by} placeholder="Choose summary type" options={summaryGroupOptions} onChange={changeSummaryGroup}/></div>
-      <label>Year<input type="number" min="1900" max="2100" placeholder="Year" value={summaryFilters.year} onChange={event => updateSummaryFilter('year', event.target.value)}/></label>
-      <label>Start date<input type="date" value={summaryFilters.start_date} onChange={event => updateSummaryFilter('start_date', event.target.value)}/></label>
-      <label>End date<input type="date" value={summaryFilters.end_date} onChange={event => updateSummaryFilter('end_date', event.target.value)}/></label>
       <div className="summary-more" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setSummaryMoreOpen(false); }}>
-        <button className="status-filter-trigger summary-more-trigger" type="button" aria-haspopup="menu" aria-expanded={summaryMoreOpen} onClick={() => setSummaryMoreOpen(open => !open)}><Filter size={16}/><span>{additionalSummaryCount ? `Additional filters (${additionalSummaryCount})` : 'Additional filters'}</span><ChevronDown size={15}/></button>
-        {summaryMoreOpen && <div className="summary-more-menu" role="menu" aria-label="Additional summary filters">
+        <button className="status-filter-trigger summary-more-trigger" type="button" aria-haspopup="menu" aria-expanded={summaryMoreOpen} onClick={() => setSummaryMoreOpen(open => !open)}><Filter size={16}/><span>{summaryFilterCount ? `Filters (${summaryFilterCount})` : 'Filters'}</span><ChevronDown size={15}/></button>
+        {summaryMoreOpen && <div className="summary-more-menu" role="menu" aria-label="Summary filters">
+          <label>Year<input type="number" min="1900" max="2100" placeholder="Year" value={summaryFilters.year} onChange={event => updateSummaryFilter('year', event.target.value)}/></label>
+          <label>Start date<input type="date" value={summaryFilters.start_date} onChange={event => updateSummaryFilter('start_date', event.target.value)}/></label>
+          <label>End date<input type="date" value={summaryFilters.end_date} onChange={event => updateSummaryFilter('end_date', event.target.value)}/></label>
           <div className="summary-toolbar-field"><span>Month</span><TransactionDropdown label="Month" value={summaryFilters.month} placeholder="All months" emptyLabel="All months" options={summaryMonthOptions} onChange={value => updateSummaryFilter('month', value)}/></div>
           <div className="summary-toolbar-field"><span>Account</span><TransactionDropdown label="Account" value={summaryFilters.account} placeholder="All accounts" emptyLabel="All accounts" options={accountOptions} onChange={value => updateSummaryFilter('account', value)}/></div>
           <div className="summary-toolbar-field"><span>Type</span><TransactionDropdown label="Type" value={summaryFilters.type} placeholder="All types" emptyLabel="All types" options={typeOptions} onChange={value => updateSummaryFilter('type', value)}/></div>
           <div className="summary-toolbar-field"><span>Category</span><TransactionDropdown label="Category" value={summaryFilters.category} placeholder="All categories" emptyLabel="All categories" options={summaryCategoryOptions} onChange={value => updateSummaryFilter('category', value)}/></div>
           <div className="summary-toolbar-field"><span>Sub-category</span><TransactionDropdown label="Sub-category" value={summaryFilters.sub_category} placeholder="All sub-categories" emptyLabel="All sub-categories" options={summarySubCategoryOptions} disabled={!summaryFilters.category && summarySubCategoryOptions.length === 0} onChange={value => updateSummaryFilter('sub_category', value)}/></div>
           <div className="summary-toolbar-field"><span>Payment mode</span><TransactionDropdown label="Payment mode" value={summaryFilters.payment_mode} placeholder="All payment modes" emptyLabel="All payment modes" options={paymentModeOptions} onChange={value => updateSummaryFilter('payment_mode', value)}/></div>
+          <div className="summary-toolbar-actions"><button className="secondary-btn compact" type="button" onClick={clearSummaryFilters}>Reset</button><button className="primary-btn compact" disabled={summaryLoading}><Filter size={16}/>{summaryLoading ? 'Loading...' : 'Apply'}</button></div>
         </div>}
       </div>
-      <div className="summary-toolbar-actions"><button className="secondary-btn compact" type="button" onClick={clearSummaryFilters}>Reset</button><button className="primary-btn compact" disabled={summaryLoading}><Filter size={16}/>{summaryLoading ? 'Loading...' : 'Apply'}</button></div>
     </form> : <div className="transactions-toolbar">
       <div className="users-search"><Search size={17} aria-hidden="true"/><input value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Search transactions…" aria-label="Search transactions"/></div>
-      <div className="transaction-filters">
-        {FILTERS.map(([key, label]) => <div key={key} className="status-filter" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setOpenFilter(current => current === key ? '' : current); }}>
-          <button type="button" className="status-filter-trigger" aria-haspopup="menu" aria-expanded={openFilter === key} onClick={() => setOpenFilter(current => current === key ? '' : key)}><Filter size={16}/><span>{filterLabel(key, label)}</span><ChevronDown size={15}/></button>
-          {openFilter === key && <div className="status-filter-menu" role="menu" aria-label={`Filter transactions by ${label}`}>
-            {Array.isArray(filters[key])
-              ? <>
-                <button type="button" role="menuitem" className={`status-filter-option ${!filters[key].length ? 'selected' : ''}`} onClick={() => updateFilter(key, [])}><Filter size={16}/><span>{allLabel(label)}</span>{!filters[key].length && <Check size={15}/>}</button>
-                {filterOptions(key).map(option => {
-                  const optionId = idValue(option._id);
-                  const selected = filters[key].includes(optionId);
-                  return <button key={optionId} type="button" role="menuitemcheckbox" aria-checked={selected} className={`status-filter-option ${selected ? 'selected' : ''}`} onClick={() => toggleMultiFilter(key, optionId)}><span>{option.name}</span>{selected && <Check size={15}/>}</button>;
-                })}
-              </>
-              : <>
-                <button type="button" role="menuitemradio" aria-checked={!filters[key]} className={`status-filter-option ${!filters[key] ? 'selected' : ''}`} onClick={() => updateFilter(key, '')}><Filter size={16}/><span>{allLabel(label)}</span>{!filters[key] && <Check size={15}/>}</button>
-                {filterOptions(key).map(option => {
-                  const optionId = idValue(option._id);
-                  return <button key={optionId} type="button" role="menuitemradio" aria-checked={filters[key] === optionId} className={`status-filter-option ${filters[key] === optionId ? 'selected' : ''}`} onClick={() => updateFilter(key, optionId)}><span>{option.name}</span>{filters[key] === optionId && <Check size={15}/>}</button>;
-                })}
-              </>}
-          </div>}
-        </div>)}
+      <div className="transaction-filters" onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget)) setListFiltersOpen(false); }}>
+        <button type="button" className="status-filter-trigger transaction-filter-trigger" aria-haspopup="menu" aria-expanded={listFiltersOpen} onClick={() => { setDraftFilters(cloneFilters(filters)); setListFiltersOpen(open => !open); }}><Filter size={16}/><span>{listFilterCount ? `Filters (${listFilterCount})` : 'Filters'}</span><ChevronDown size={15}/></button>
+        {listFiltersOpen && <div className="transaction-filter-menu" role="menu" aria-label="Transaction filters">
+          {FILTERS.map(([key, label]) => <div key={key} className="transaction-filter-section">
+            <span>{label}</span>
+            {Array.isArray(draftFilters[key])
+              ? <TransactionDropdown label={label} value={draftFilters[key][0] || ''} placeholder={allLabel(label)} emptyLabel={allLabel(label)} options={draftFilterOptions(key).map(option => ({ value: idValue(option._id), label: option.name }))} onChange={value => updateDraftFilter(key, value ? [value] : [])}/>
+              : <TransactionDropdown label={label} value={draftFilters[key]} placeholder={allLabel(label)} emptyLabel={allLabel(label)} options={draftFilterOptions(key).map(option => ({ value: idValue(option._id), label: option.name }))} onChange={value => updateDraftFilter(key, value)}/>}
+          </div>)}
+          <div className="summary-toolbar-actions transaction-filter-actions"><button className="secondary-btn compact" type="button" onClick={resetListFilters}>Reset</button><button className="primary-btn compact" type="button" onClick={applyListFilters}>Apply</button></div>
+        </div>}
       </div>
     </div>}
     {view === 'summary' && summaryError && <div className="inline-error users-error" role="alert">{summaryError}</div>}

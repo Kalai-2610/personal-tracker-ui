@@ -4,6 +4,8 @@
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     color: #13213d;
     background: var(--bg, #f7f8fb);
+    --app-min-width: 360px;
+    --app-min-height: 640px;
     font-synthesis: none;
 }
 
@@ -16,13 +18,13 @@ body,
 #root {
     margin: 0;
     min-height: 100%;
-    min-width: 320px;
+    min-width: var(--app-min-width);
     width: 100%;
 }
 
 body {
-    min-height: max(100vh, 480px);
-    min-height: max(100dvh, 480px);
+    min-height: max(100vh, var(--app-min-height));
+    min-height: max(100dvh, var(--app-min-height));
 }
 
 button,
@@ -131,9 +133,9 @@ input::placeholder {
 }
 
 .app-shell {
-    min-height: max(100vh, 480px);
-    min-height: max(100dvh, 480px);
-    min-width: 320px;
+    min-height: max(100vh, var(--app-min-height));
+    min-height: max(100dvh, var(--app-min-height));
+    min-width: var(--app-min-width);
     display: flex;
 }
 
@@ -633,7 +635,7 @@ nav {
     display: none
 }
 
-@media(max-width:760px) {
+@media(max-width:900px) {
     .sidebar {
         position: fixed;
         inset: 0 auto 0 0;
