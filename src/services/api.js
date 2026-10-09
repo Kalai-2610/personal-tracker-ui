@@ -129,12 +129,12 @@ export const lookupsApi = {
 };
 
 export const transactionsApi = {
-  list: (payload = {}) => apiRequest('/api/v1/transactions', { method: 'QUERY', body: JSON.stringify(payload) }),
+  list: (payload = {}) => apiRequest('/api/v1/transactions', { method: 'POST', body: JSON.stringify(payload) }),
   create: (payload) => apiRequest('/api/v1/transactions', { method: 'POST', body: JSON.stringify(payload) }),
   get: (id) => apiRequest(`/api/v1/transactions/${id}`),
   update: (id, payload) => apiRequest(`/api/v1/transactions/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   remove: (id) => apiRequest(`/api/v1/transactions/${id}`, { method: 'DELETE' }),
-  summary: (payload) => apiRequest('/api/v1/transactions/summary', { method: 'QUERY', body: JSON.stringify(payload) })
+  summary: (payload) => apiRequest('/api/v1/transactions/summary', { method: 'POST', body: JSON.stringify(payload) })
 };
 
 export { API_BASE_URL };
