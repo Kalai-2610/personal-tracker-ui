@@ -4,8 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f172a" />
-    <link rel="icon" type="image/svg+xml" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Personal Tracker</title>
+    <script type="module">
+      let faviconUrl;
+      const faviconLink = document.querySelector('link[rel="icon"]');
+      if (import.meta.env.VITE_API_BASE_URL) {
+        console.log('API Base URL:', import.meta.env.VITE_API_BASE_URL);
+        faviconUrl = import.meta.env.VITE_API_BASE_URL.replace(/\/$/, '') + '/favicon.svg';
+        faviconLink.href = faviconUrl;
+      } else {
+        console.warn('VITE_API_BASE_URL is not defined in the environment variables.');
+      }
+    </script>
   </head>
   <body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body>
 </html>
