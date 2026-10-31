@@ -179,7 +179,7 @@ export default function Passwords() {
       website: form.website.trim(),
       id: form.id.trim()
     };
-    if (!payload.name || !payload.website || !payload.id || (!editingPassword && !form.password)) {
+    if (!payload.name || !payload.id || (!editingPassword && !form.password)) {
       setDialogError('Complete all password fields.');
       return;
     }
