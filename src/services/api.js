@@ -1,14 +1,19 @@
 import axios from 'axios';
+import { clearStoredEncryptionKeys } from './encryption';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
+const AUTH_STORAGE_KEY = 'personalTrackerAuth';
 
 export const getStoredAuth = () => {
-  try { return JSON.parse(localStorage.getItem('personalTrackerAuth') || 'null'); }
+  try { return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null'); }
   catch { return null; }
 };
 
-export const setStoredAuth = (auth) => localStorage.setItem('personalTrackerAuth', JSON.stringify(auth));
-export const clearStoredAuth = () => localStorage.removeItem('personalTrackerAuth');
+export const setStoredAuth = (auth) => localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
+export const clearStoredAuth = () => {
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  clearStoredEncryptionKeys();
+};
 let refreshPromise = null;
 
 const apiClient = axios.create({ baseURL: API_BASE_URL });
@@ -135,6 +140,14 @@ export const transactionsApi = {
   update: (id, payload) => apiRequest(`/api/v1/transactions/${id}`, { method: 'PUT', body: JSON.stringify(payload) }),
   remove: (id) => apiRequest(`/api/v1/transactions/${id}`, { method: 'DELETE' }),
   summary: (payload) => apiRequest('/api/v1/transactions/summary', { method: 'POST', body: JSON.stringify(payload) })
+};
+
+export const passwordsApi = {
+  list: (params = {}) => apiRequest(`/api/v1/passwords?${new URLSearchParams(params)}`),
+  create: (payload) => apiRequest('/api/v1/passwords', { method: 'POST', body: JSON.stringify(payload) }),
+  get: (id) => apiRequest(`/api/v1/passwords/${id}`),
+  update: (id, payload) => apiRequest(`/api/v1/passwords/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+  remove: (id) => apiRequest(`/api/v1/passwords/${id}`, { method: 'DELETE' })
 };
 
 export { API_BASE_URL };

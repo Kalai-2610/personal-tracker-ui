@@ -28,7 +28,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
     font: inherit;
 }
 
@@ -62,6 +63,29 @@ input {
 body {
     background: var(--bg);
     color: var(--text);
+    scrollbar-color: color-mix(in srgb, var(--muted) 58%, transparent) transparent;
+    scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--muted) 58%, transparent);
+    background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--primary) 72%, transparent);
+    background-clip: padding-box;
 }
 
 form {
@@ -78,7 +102,8 @@ label {
 }
 
 input,
-select {
+select,
+textarea {
     width: 100%;
     border: 1px solid var(--border);
     border-radius: 9px;
@@ -97,6 +122,14 @@ select:focus {
 
 input::placeholder {
     color: #8793a8;
+}
+
+textarea {
+    min-height: 118px;
+    resize: vertical;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    line-height: 1.45;
 }
 
 .primary-btn {
@@ -132,6 +165,14 @@ input::placeholder {
     font-size: 13px;
 }
 
+.form-info {
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+}
+
 .app-shell {
     min-height: max(100vh, var(--app-min-height));
     min-height: max(100dvh, var(--app-min-height));
@@ -146,7 +187,7 @@ input::placeholder {
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    padding: 28px 16px 16px;
+    padding: 20px 12px 12px;
     z-index: 30;
 }
 
@@ -154,7 +195,7 @@ input::placeholder {
     display: flex;
     align-items: center;
     gap: 11px;
-    padding: 0 12px 28px;
+    padding: 0 10px 20px;
     font-size: 18px;
     font-weight: 700;
     letter-spacing: -.4px;
@@ -181,7 +222,7 @@ nav {
     gap: 12px;
     color: var(--muted);
     text-decoration: none;
-    padding: 11px 13px;
+    padding: 9px 11px;
     border-radius: 9px;
     font-size: 14px;
     font-weight: 500;
@@ -203,7 +244,7 @@ nav {
     display: grid;
     gap: 8px;
     border-top: 1px solid var(--border);
-    padding-top: 16px;
+    padding-top: 12px;
     position: relative;
 }
 
@@ -295,6 +336,10 @@ nav {
     box-shadow: var(--shadow);
 }
 
+.encryption-dialog {
+    width: min(620px, 100%);
+}
+
 .dialog-heading {
     display: flex;
     align-items: center;
@@ -345,8 +390,20 @@ nav {
     margin-top: 4px;
 }
 
+.encryption-actions {
+    flex-wrap: wrap;
+}
+
+.file-input-hidden {
+    display: none;
+}
+
 .dialog-actions .primary-btn,
 .dialog-actions .secondary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     min-height: 36px;
     padding: 0 12px;
     border-radius: 8px;
@@ -598,17 +655,73 @@ nav {
     min-width: 0;
 }
 
-.page-content {
-    padding: 32px;
-    max-width: auto;
-    margin: auto
+.session-timer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 9px;
+    border: 1px solid color-mix(in srgb, var(--primary) 26%, var(--border));
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
 }
 
-.mobile-menu {
-    display: none;
-    border: 0;
-    background: none;
-    color: var(--text)
+.session-timer svg {
+    flex: 0 0 auto;
+    color: var(--primary);
+}
+
+.session-timer span {
+    flex: 1;
+    color: var(--muted);
+}
+
+.session-timer strong {
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.session-toast {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 46px;
+    max-width: min(360px, calc(100vw - 32px));
+    padding: 0 14px;
+    border: 1px solid color-mix(in srgb, var(--primary) 34%, var(--border));
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.session-toast svg {
+    flex: 0 0 auto;
+    color: var(--primary);
+}
+
+.session-toast span {
+    flex: 1;
+}
+
+.session-toast strong {
+    color: var(--primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.page-content {
+    padding: 16px;
+    max-width: auto;
+    margin: auto
 }
 
 .page-heading {
@@ -631,45 +744,94 @@ nav {
     font-size: 13px
 }
 
-.mobile-overlay {
-    display: none
-}
-
 @media(max-width:900px) {
+    *::-webkit-scrollbar {
+        width: 8px;
+        height: 8px
+    }
+
+    *::-webkit-scrollbar-thumb {
+        border-width: 2px
+    }
+
     .sidebar {
-        position: fixed;
-        inset: 0 auto 0 0;
-        transform: translateX(-105%);
-        transition: transform .2s;
-        width: 260px;
-        box-shadow: var(--shadow)
+        position: sticky;
+        top: 0;
+        width: 72px;
+        flex: 0 0 72px;
+        min-height: max(100vh, var(--app-min-height));
+        min-height: max(100dvh, var(--app-min-height));
+        padding: 14px 8px 10px;
+        transform: none;
+        transition: none;
+        box-shadow: none
     }
 
-    .sidebar.mobile-open {
-        transform: translateX(0)
+    .brand {
+        justify-content: center;
+        gap: 0;
+        padding: 0 0 16px
     }
 
-    .mobile-overlay {
-        display: block;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, .35);
-        border: 0;
-        z-index: 25
+    .brand span,
+    .nav-link span,
+    .profile-text,
+    .profile-chevron-closed,
+    .profile-trigger > svg {
+        display: none
     }
 
-    .mobile-menu {
-        display: grid;
-        place-items: center;
-        position: fixed;
-        top: 14px;
-        left: 14px;
-        z-index: 40;
-        width: 40px;
-        height: 40px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: var(--surface)
+    .brand-mark {
+        width: 38px;
+        height: 38px
+    }
+
+    .nav-link {
+        justify-content: center;
+        gap: 0;
+        padding: 9px 0
+    }
+
+    .nav-link svg {
+        width: 20px;
+        height: 20px
+    }
+
+    .sidebar-bottom {
+        gap: 8px;
+        padding-top: 12px
+    }
+
+    .profile {
+        justify-content: center;
+        gap: 0;
+        padding: 5px 0
+    }
+
+    .profile-menu {
+        position: absolute;
+        left: calc(100% + 10px);
+        bottom: 0;
+        width: 224px;
+        z-index: 45
+    }
+
+    .session-timer {
+        justify-content: center;
+        min-height: 56px;
+        padding: 7px 4px;
+        flex-direction: column;
+        gap: 4px;
+        text-align: center
+    }
+
+    .session-timer span {
+        display: none
+    }
+
+    .session-timer strong {
+        font-size: 11px;
+        line-height: 1.1
     }
 
     .topbar {
@@ -677,7 +839,13 @@ nav {
     }
 
     .page-content {
-        padding: 68px 16px 22px
+        padding: 12px
+    }
+
+    .session-toast {
+        right: 16px;
+        bottom: 16px;
+        max-width: calc(100vw - 32px)
     }
 
     .page-heading h1 {

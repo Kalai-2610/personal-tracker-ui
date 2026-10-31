@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown, BarChart3, Check, ChevronDown, ChevronLeft, ChevronRight, Filter, List, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { lookupsApi, transactionsApi } from '../services/api';
+import useAutoPageSize from '../hooks/useAutoPageSize';
 
 const LOOKUP_TYPES = ['account', 'type', 'category', 'sub_category', 'payment_mode'];
 const FILTERS = [['account', 'Account'], ['type', 'Type'], ['category', 'Category'], ['payment_mode', 'Payment mode']];
@@ -228,7 +229,7 @@ export default function Transactions() {
   const [form, setForm] = useState(FORM_DEFAULTS);
   const requestId = useRef(0);
   const summaryRequestId = useRef(0);
-  const size = 10;
+  const [tableWrapRef, size] = useAutoPageSize();
 
   const loadLookupOptions = async () => {
     const values = await Promise.all(LOOKUP_TYPES.map(async (key) => {
@@ -318,7 +319,7 @@ export default function Transactions() {
   }, [dialogOpen]);
   useEffect(() => {
     load(page, filters, query);
-  }, [page, query, filters, sortBy, sortOrder]);
+  }, [page, query, filters, sortBy, sortOrder, size]);
 
   const openCreateDialog = () => {
     setEditingTransaction(null);
@@ -577,7 +578,7 @@ export default function Transactions() {
           </div>)}
         </div> : <div className="lookup-empty-state" role="status">No summary data found.</div>}</div>
     </div> : <div className="table-card transaction-table-card">
-      <div className="table-wrap"><table>
+      <div className="table-wrap" ref={tableWrapRef}><table>
         <thead><tr>
           <th aria-sort={sortBy === 'date' ? sortOrder === 'asc' ? 'ascending' : 'descending' : 'none'}><button type="button" className="table-sort" aria-label={`Sort by date ${sortLabel('date')}`} onClick={() => changeSort('date')}><span>Date</span>{sortIcon('date')}</button></th>
           <th>Description</th>
@@ -589,14 +590,14 @@ export default function Transactions() {
           <th>Actions</th>
         </tr></thead>
         {!loading && result.data?.length ? <tbody>{result.data.map(transaction => <tr key={idValue(transaction._id)}>
-          <td>{formatDate(transaction.date)}</td>
-          <td><strong className="transaction-description">{transaction.description || '—'}</strong></td>
-          <td>{name(transaction.account)}</td>
-          <td><span className="lookup-type">{name(transaction.type)}</span></td>
-          <td>{name(transaction.category)}</td>
-          <td>{name(transaction.sub_category)}</td>
-          <td><span className="lookup-type">{name(transaction.payment_mode)}</span></td>
-          <td className="amount-cell">{Number(transaction.amount || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</td>
+          <td title={formatDate(transaction.date)}>{formatDate(transaction.date)}</td>
+          <td title={transaction.description || '—'}><strong className="transaction-description">{transaction.description || '—'}</strong></td>
+          <td title={name(transaction.account)}>{name(transaction.account)}</td>
+          <td title={name(transaction.type)}><span className="lookup-type">{name(transaction.type)}</span></td>
+          <td title={name(transaction.category)}>{name(transaction.category)}</td>
+          <td title={name(transaction.sub_category)}>{name(transaction.sub_category)}</td>
+          <td title={name(transaction.payment_mode)}><span className="lookup-type">{name(transaction.payment_mode)}</span></td>
+          <td className="amount-cell" title={Number(transaction.amount || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}>{Number(transaction.amount || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })}</td>
           <td className="transaction-actions">
             <button className="icon-btn lookup-action-edit" title="Edit transaction" aria-label={`Edit ${transaction.description || 'transaction'}`} onClick={() => openEditDialog(transaction)}><Pencil size={16}/></button>
             <button className="icon-btn lookup-action-delete" title="Delete transaction" aria-label={`Delete ${transaction.description || 'transaction'}`} onClick={() => deleteTransaction(transaction)}><Trash2 size={16}/></button>

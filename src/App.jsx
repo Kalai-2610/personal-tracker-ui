@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Users from './pages/Users';
 import Lookups from './pages/Lookups';
 import Transactions from './pages/Transactions';
+import Passwords from './pages/Passwords';
 import Home from './pages/Home';
 import { useAuth } from './context/AuthContext';
 
@@ -21,6 +22,7 @@ export default function App() {
       <Route index element={<Navigate to={landing} replace/>}/>
       <Route path="home" element={user?.isSystem ? <Navigate to="/users" replace/> : <Home/>}/>
       <Route path="transactions" element={<Transactions/>}/>
+      <Route path="passwords" element={user?.isSystem ? <Navigate to="/users" replace/> : <Passwords/>}/>
       <Route path="lookups" element={<Lookups/>}/>
       <Route path="users" element={user?.isSystem ? <Users/> : <Navigate to="/home" replace/>}/>
     </Route></Route>

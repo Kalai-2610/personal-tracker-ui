@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDownCircle, ArrowUpCircle, RefreshCw, Scale, WalletCards } from 'lucide-react';
-import { transactionsApi } from '../services/api';
+import { ArrowDownCircle, ArrowUpCircle, KeyRound, RefreshCw, Scale, WalletCards } from 'lucide-react';
+import { passwordsApi, transactionsApi } from '../services/api';
 
 const formatCurrency = (value) => Number(value || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR' });
 
@@ -8,6 +8,7 @@ const normalizeType = (value) => String(value || '').trim().toLowerCase();
 
 export default function Home() {
   const [summary, setSummary] = useState([]);
+  const [passwordCount, setPasswordCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -19,8 +20,14 @@ export default function Home() {
     else setLoading(true);
     setError('');
     try {
-      const result = await transactionsApi.summary({ group_by: 'type_account' });
-      if (current === requestId.current) setSummary(Array.isArray(result) ? result : []);
+      const [summaryResult, passwordsResult] = await Promise.all([
+        transactionsApi.summary({ group_by: 'type_account' }),
+        passwordsApi.list({ page: 1, size: 1 })
+      ]);
+      if (current === requestId.current) {
+        setSummary(Array.isArray(summaryResult) ? summaryResult : []);
+        setPasswordCount(Number(passwordsResult.pagination?.total) || passwordsResult.data?.length || 0);
+      }
     } catch (requestError) {
       if (current === requestId.current) setError(requestError.message);
     } finally {
@@ -67,17 +74,18 @@ export default function Home() {
       <div className="summary-metric income"><span><ArrowUpCircle size={18}/>Income</span><strong>{formatCurrency(totals.income)}</strong></div>
       <div className="summary-metric expense"><span><ArrowDownCircle size={18}/>Expense</span><strong>{formatCurrency(totals.expense)}</strong></div>
       <div className={`summary-metric balance ${totals.balance < 0 ? 'negative' : 'positive'}`}><span><Scale size={18}/>Balance</span><strong>{formatCurrency(totals.balance)}</strong></div>
+      <div className="summary-metric passwords"><span><KeyRound size={18}/>Passwords</span><strong>{passwordCount}</strong></div>
     </div>
     <div className="table-card home-summary-card">
       <div className="home-summary-heading"><div><WalletCards size={18}/><span>Account Summary</span></div><span>{totals.count} transactions</span></div>
       <div className="table-wrap"><table>
         <thead><tr><th>Account</th><th className="amount-cell">Income</th><th className="amount-cell">Expense</th><th className="amount-cell">Balance</th><th className="amount-cell">Transactions</th></tr></thead>
         {!loading && accounts.length ? <tbody>{accounts.map(account => <tr key={account.account}>
-          <td><strong className="transaction-description">{account.account}</strong></td>
-          <td className="amount-cell">{formatCurrency(account.income)}</td>
-          <td className="amount-cell">{formatCurrency(account.expense)}</td>
-          <td className={`amount-cell balance-value ${account.balance < 0 ? 'negative' : 'positive'}`}>{formatCurrency(account.balance)}</td>
-          <td className="amount-cell">{account.count}</td>
+          <td title={account.account}><strong className="transaction-description">{account.account}</strong></td>
+          <td className="amount-cell" title={formatCurrency(account.income)}>{formatCurrency(account.income)}</td>
+          <td className="amount-cell" title={formatCurrency(account.expense)}>{formatCurrency(account.expense)}</td>
+          <td className={`amount-cell balance-value ${account.balance < 0 ? 'negative' : 'positive'}`} title={formatCurrency(account.balance)}>{formatCurrency(account.balance)}</td>
+          <td className="amount-cell" title={String(account.count)}>{account.count}</td>
         </tr>)}</tbody> : null}
       </table>{loading
         ? <div className="lookup-empty-state" role="status">Loading…</div>

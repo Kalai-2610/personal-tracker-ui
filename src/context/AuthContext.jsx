@@ -1,11 +1,23 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { clearStoredAuth, getStoredAuth, refreshToken, setStoredAuth, signIn, signOut as apiSignOut } from '../services/api';
+import { clearStoredEncryptionKeys } from '../services/encryption';
 
 const AuthContext = createContext(null);
+const SESSION_WARNING_SECONDS = 5 * 60;
+
+function parseExpiry(value) {
+  if (!value) return null;
+  const expiresAt = typeof value === 'number'
+    ? (value < 1e12 ? value * 1000 : value)
+    : Date.parse(value);
+  return Number.isFinite(expiresAt) ? expiresAt : null;
+}
 
 export function AuthProvider({ children }) {
   const [auth, setAuth] = useState(getStoredAuth);
   const [loading, setLoading] = useState(false);
+  const [sessionMessage, setSessionMessage] = useState('');
+  const [sessionSecondsRemaining, setSessionSecondsRemaining] = useState(null);
 
   useEffect(() => { if (auth) setStoredAuth(auth); }, [auth]);
 
@@ -14,6 +26,8 @@ export function AuthProvider({ children }) {
     const handleExpiry = () => {
       clearStoredAuth();
       setAuth(null);
+      setSessionSecondsRemaining(null);
+      setSessionMessage('Your session has expired. Please sign in again.');
     };
     window.addEventListener('personal-tracker-auth-refreshed', handleRefresh);
     window.addEventListener('personal-tracker-auth-expired', handleExpiry);
@@ -24,32 +38,49 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!auth?._expire_on) return undefined;
-    const expiresAt = typeof auth._expire_on === 'number'
-      ? (auth._expire_on < 1e12 ? auth._expire_on * 1000 : auth._expire_on)
-      : Date.parse(auth._expire_on);
-    if (!Number.isFinite(expiresAt)) return undefined;
+    const expiresAt = parseExpiry(auth?._expire_on);
+    if (!expiresAt) {
+      setSessionSecondsRemaining(null);
+      return undefined;
+    }
     const expireSession = () => {
       clearStoredAuth();
       setAuth(null);
+      setSessionSecondsRemaining(null);
+      setSessionMessage('Your session has expired. Please sign in again.');
     };
-    const delay = expiresAt - Date.now();
-    if (delay <= 0) {
-      expireSession();
-      return undefined;
-    }
-    const timeout = window.setTimeout(expireSession, delay);
-    return () => window.clearTimeout(timeout);
+    const updateCountdown = () => {
+      const secondsRemaining = Math.ceil((expiresAt - Date.now()) / 1000);
+      if (secondsRemaining <= 0) {
+        expireSession();
+        return;
+      }
+      setSessionSecondsRemaining(secondsRemaining);
+    };
+    updateCountdown();
+    const interval = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(interval);
   }, [auth]);
 
   const login = async (email, password) => {
     setLoading(true);
-    try { const result = await signIn(email, password); setAuth(result); return result; }
+    try {
+      const loginEmail = email.trim();
+      const result = await signIn(loginEmail, password);
+      const nextAuth = { ...result, loginEmail: result.email || result.loginEmail || loginEmail };
+      clearStoredEncryptionKeys();
+      setSessionMessage('');
+      setSessionSecondsRemaining(null);
+      setAuth(nextAuth);
+      return nextAuth;
+    }
     finally { setLoading(false); }
   };
 
   const logout = async () => {
     try { if (auth) await apiSignOut(); } catch { /* local sign-out still proceeds */ }
+    setSessionMessage('');
+    setSessionSecondsRemaining(null);
     clearStoredAuth(); setAuth(null);
   };
 
@@ -60,7 +91,19 @@ export function AuthProvider({ children }) {
     setAuth(next); return next;
   };
 
-  const value = useMemo(() => ({ auth, user: auth, isAuthenticated: !!auth?.access_token, loading, login, logout, refresh }), [auth, loading]);
+  const clearSessionMessage = () => setSessionMessage('');
+  const value = useMemo(() => ({
+    auth,
+    user: auth,
+    isAuthenticated: !!auth?.access_token,
+    loading,
+    sessionMessage,
+    sessionSecondsRemaining,
+    clearSessionMessage,
+    login,
+    logout,
+    refresh
+  }), [auth, loading, sessionMessage, sessionSecondsRemaining]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export const useAuth = () => useContext(AuthContext);

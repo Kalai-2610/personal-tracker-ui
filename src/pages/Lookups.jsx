@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown, ChevronLeft, ChevronRight, Filter, Pencil, Plus, Search, Tags, Trash2, X } from 'lucide-react';
 import { lookupsApi } from '../services/api';
+import useAutoPageSize from '../hooks/useAutoPageSize';
 
 const LOOKUP_TYPES = ['account', 'type', 'category', 'sub_category', 'payment_mode'];
 const TYPE_LABELS = {
@@ -161,7 +162,7 @@ export default function Lookups() {
   const [lookupPath, setLookupPath] = useState([]);
   const [typeMenuOpen, setTypeMenuOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const rowsPerPage = 10;
+  const [tableWrapRef, rowsPerPage] = useAutoPageSize();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -218,7 +219,7 @@ export default function Lookups() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [dialogOpen]);
 
-  useEffect(() => { load(debouncedSearch, typeFilter, page, parentContext); }, [debouncedSearch, typeFilter, sortBy, sortOrder, page, parentContext]);
+  useEffect(() => { load(debouncedSearch, typeFilter, page, parentContext); }, [debouncedSearch, typeFilter, sortBy, sortOrder, page, parentContext, rowsPerPage]);
 
   useEffect(() => {
     if (!dialogOpen || !requiredParentType) {
@@ -368,7 +369,7 @@ export default function Lookups() {
     </div>
     {error && <div className="inline-error users-error" role="alert">{error}</div>}
     <div className="table-card">
-      <div className="table-wrap"><table>
+      <div className="table-wrap" ref={tableWrapRef}><table>
         <thead><tr>
           <th aria-sort={sortBy === 'name' ? sortOrder === 'asc' ? 'ascending' : 'descending' : 'none'}><button type="button" className="table-sort" aria-label={`Sort by name ${sortLabel('name')}`} onClick={() => changeSort('name')}><span>Name</span>{sortIcon('name')}</button></th>
           <th>Type</th>
@@ -376,11 +377,11 @@ export default function Lookups() {
           <th>Actions</th>
         </tr></thead>
         {!loading && data.data?.length ? <tbody>{data.data.map(lookup => <tr key={lookup._id}>
-            <td>{lookup.type === 'type' || lookup.type === 'category'
+            <td title={lookup.name || '—'}>{lookup.type === 'type' || lookup.type === 'category'
               ? <button type="button" className="lookup-drilldown" aria-label={`Open ${TYPE_LABELS[lookup.type === 'type' ? 'category' : 'sub_category']} for ${lookup.name}`} onClick={() => openChildren(lookup)}><strong className="lookup-name">{lookup.name}</strong><ChevronRight size={15}/></button>
               : <strong className="lookup-name">{lookup.name}</strong>}</td>
-            <td><span className="lookup-type">{TYPE_LABELS[lookup.type] || lookup.type}</span></td>
-            <td>{formatDate(lookup._updated_on)}</td>
+            <td title={TYPE_LABELS[lookup.type] || lookup.type || '—'}><span className="lookup-type">{TYPE_LABELS[lookup.type] || lookup.type}</span></td>
+            <td title={formatDate(lookup._updated_on)}>{formatDate(lookup._updated_on)}</td>
             <td className="lookup-actions">
               <button className="icon-btn lookup-action-edit" title="Edit lookup" aria-label={`Edit ${lookup.name}`} onClick={() => openEditDialog(lookup)}><Pencil size={16}/></button>
               <button className="icon-btn lookup-action-delete" title="Delete lookup" aria-label={`Delete ${lookup.name}`} onClick={() => deleteLookup(lookup)}><Trash2 size={16}/></button>

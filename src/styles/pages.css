@@ -92,10 +92,11 @@
 }
 
 .users-page {
+    background: var(--surface);
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 64px);
-    height: calc(100dvh - 64px);
+    height: calc(100vh - 32px);
+    height: calc(100dvh - 32px);
     min-height: 0;
     overflow: hidden
 }
@@ -112,15 +113,17 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior: contain
 }
 
 .home-page {
+    background: var(--surface);
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 64px);
-    height: calc(100dvh - 64px);
+    height: calc(100vh - 32px);
+    height: calc(100dvh - 32px);
     min-height: 0;
     overflow: hidden
 }
@@ -135,7 +138,7 @@
 
 .summary-metrics {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 14px;
     margin-bottom: 14px
 }
@@ -178,6 +181,10 @@
     color: var(--danger)
 }
 
+.summary-metric.passwords strong {
+    color: var(--primary)
+}
+
 .home-summary-card {
     display: flex;
     flex: 1;
@@ -214,18 +221,31 @@
 }
 
 .lookups-page {
+    background: var(--surface);
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 64px);
-    height: calc(100dvh - 64px);
+    height: calc(100vh - 32px);
+    height: calc(100dvh - 32px);
+    min-height: 0;
+    overflow: hidden
+}
+
+.passwords-page {
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 32px);
+    height: calc(100dvh - 32px);
     min-height: 0;
     overflow: hidden
 }
 
 .transactions-page {
+    background: var(--surface);
     display: flex;
     flex-direction: column;
-    height: calc(100dvh - 64px);
+    height: calc(100vh - 32px);
+    height: calc(100dvh - 32px);
     min-height: 0;
     overflow: hidden
 }
@@ -473,7 +493,12 @@
 }
 
 .transaction-table-card { display: flex; flex: 1; flex-direction: column; min-height: 0 }
-.transaction-table-card .table-wrap { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow: auto; overscroll-behavior: contain }
+.transaction-table-card .table-wrap { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain }
+.password-table-card { display: flex; flex: 1; flex-direction: column; min-height: 0 }
+.password-table-card .table-wrap { display: flex; flex: 1; flex-direction: column; min-height: 0; overflow-x: auto; overflow-y: hidden; overscroll-behavior: contain }
+.transaction-table-card table { min-width: 1120px }
+.password-table-card table { min-width: 960px }
+.home-summary-card table { min-width: 760px }
 .transaction-description { color: var(--text); font-weight: 600 }
 .amount-cell { text-align: right; white-space: nowrap }
 .amount-sort {
@@ -608,7 +633,8 @@
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior: contain
 }
 
@@ -616,6 +642,7 @@
 .home-summary-card .table-wrap,
 .lookups-page .table-wrap,
 .transaction-table-card .table-wrap,
+.password-table-card .table-wrap,
 .summary-chart-wrap {
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--muted) 58%, transparent) transparent
@@ -625,6 +652,7 @@
 .home-summary-card .table-wrap::-webkit-scrollbar,
 .lookups-page .table-wrap::-webkit-scrollbar,
 .transaction-table-card .table-wrap::-webkit-scrollbar,
+.password-table-card .table-wrap::-webkit-scrollbar,
 .summary-chart-wrap::-webkit-scrollbar {
     width: 10px;
     height: 10px
@@ -634,6 +662,7 @@
 .home-summary-card .table-wrap::-webkit-scrollbar-track,
 .lookups-page .table-wrap::-webkit-scrollbar-track,
 .transaction-table-card .table-wrap::-webkit-scrollbar-track,
+.password-table-card .table-wrap::-webkit-scrollbar-track,
 .summary-chart-wrap::-webkit-scrollbar-track {
     background: transparent
 }
@@ -642,6 +671,7 @@
 .home-summary-card .table-wrap::-webkit-scrollbar-thumb,
 .lookups-page .table-wrap::-webkit-scrollbar-thumb,
 .transaction-table-card .table-wrap::-webkit-scrollbar-thumb,
+.password-table-card .table-wrap::-webkit-scrollbar-thumb,
 .summary-chart-wrap::-webkit-scrollbar-thumb {
     border: 3px solid transparent;
     border-radius: 999px;
@@ -653,6 +683,7 @@
 .home-summary-card .table-wrap::-webkit-scrollbar-thumb:hover,
 .lookups-page .table-wrap::-webkit-scrollbar-thumb:hover,
 .transaction-table-card .table-wrap::-webkit-scrollbar-thumb:hover,
+.password-table-card .table-wrap::-webkit-scrollbar-thumb:hover,
 .summary-chart-wrap::-webkit-scrollbar-thumb:hover {
     background: color-mix(in srgb, var(--primary) 72%, transparent);
     background-clip: padding-box
@@ -674,6 +705,13 @@
 }
 
 .lookups-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 14px
+}
+
+.passwords-toolbar {
     display: flex;
     align-items: center;
     gap: 9px;
@@ -713,6 +751,7 @@
 }
 
 .lookup-name {
+    display: block;
     color: var(--text);
     font-weight: 600
 }
@@ -721,6 +760,8 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    max-width: 100%;
+    min-width: 0;
     padding: 0;
     border: 0;
     background: transparent;
@@ -776,8 +817,9 @@
 }
 
 .lookup-type {
-    display: inline-flex;
+    display: inline-block;
     align-items: center;
+    max-width: 100%;
     min-height: 24px;
     padding: 3px 9px;
     border: 1px solid var(--border);
@@ -786,6 +828,8 @@
     color: var(--muted);
     font-size: 11px;
     font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap
 }
 
@@ -995,7 +1039,47 @@
 table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     min-width: 700px
+}
+
+.home-summary-card th:nth-child(1) { width: 32% }
+.home-summary-card th:nth-child(2),
+.home-summary-card th:nth-child(3),
+.home-summary-card th:nth-child(4) { width: 17% }
+.home-summary-card th:nth-child(5) { width: 17% }
+
+.users-page th:nth-child(1) { width: 28% }
+.users-page th:nth-child(2) { width: 32% }
+.users-page th:nth-child(3) { width: 14% }
+.users-page th:nth-child(4) { width: 16% }
+.users-page th:nth-child(5) { width: 10% }
+
+.lookups-page th:nth-child(1) { width: 45% }
+.lookups-page th:nth-child(2) { width: 22% }
+.lookups-page th:nth-child(3) { width: 20% }
+.lookups-page th:nth-child(4) { width: 13% }
+
+.transaction-table-card th:nth-child(1) { width: 9% }
+.transaction-table-card th:nth-child(2) { width: 20% }
+.transaction-table-card th:nth-child(3) { width: 12% }
+.transaction-table-card th:nth-child(4) { width: 9% }
+.transaction-table-card th:nth-child(5) { width: 11% }
+.transaction-table-card th:nth-child(6) { width: 11% }
+.transaction-table-card th:nth-child(7) { width: 11% }
+.transaction-table-card th:nth-child(8) { width: 9% }
+.transaction-table-card th:nth-child(9) { width: 8% }
+
+.password-table-card th:nth-child(1) { width: 18% }
+.password-table-card th:nth-child(2) { width: 10% }
+.password-table-card th:nth-child(3) { width: 24% }
+.password-table-card th:nth-child(4) { width: 17% }
+.password-table-card th:nth-child(5) { width: 13% }
+.password-table-card th:nth-child(6) { width: 10% }
+.password-table-card th:nth-child(7) { width: 8% }
+
+tbody tr {
+    height: 52px
 }
 
 th,
@@ -1003,7 +1087,11 @@ td {
     text-align: left;
     padding: 14px 16px;
     border-bottom: 1px solid var(--border);
-    font-size: 13px
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    white-space: nowrap
 }
 
 th {
@@ -1020,7 +1108,31 @@ td {
     display: flex;
     align-items: center;
     gap: 9px;
+    min-width: 0;
     color: var(--text)
+}
+
+.user-cell strong,
+.transaction-description,
+.lookup-name,
+.password-name,
+.password-link,
+.password-mask,
+.table-sort span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
+
+.user-cell strong,
+.transaction-description,
+.lookup-name,
+.password-name,
+.password-link,
+.password-mask {
+    display: block;
+    min-width: 0;
+    max-width: 100%
 }
 
 .table-sort {
@@ -1061,6 +1173,81 @@ th[aria-sort="descending"] .table-sort svg,
 
 .user-actions {
     white-space: nowrap;
+}
+
+.password-actions {
+    white-space: nowrap
+}
+
+.password-actions .icon-btn + .icon-btn {
+    margin-left: 6px
+}
+
+.password-actions .icon-btn {
+    transition: color .15s, background-color .15s, border-color .15s, box-shadow .15s, transform .15s
+}
+
+.password-actions .icon-btn:not(:disabled):hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 9px color-mix(in srgb, var(--text) 12%, transparent)
+}
+
+.password-link {
+    display: block;
+    color: var(--primary);
+    text-decoration: none;
+    overflow-wrap: anywhere
+}
+
+.password-name {
+    color: var(--text);
+    font-weight: 600
+}
+
+.password-link:hover {
+    color: var(--primary-hover);
+    text-decoration: underline
+}
+
+.password-mask {
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 12px;
+    overflow-wrap: anywhere
+}
+
+.password-entry-dialog {
+    width: min(520px, 100%)
+}
+
+.password-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center
+}
+
+.password-input-wrap input {
+    padding-right: 46px
+}
+
+.password-input-toggle {
+    position: absolute;
+    right: 7px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer
+}
+
+.password-input-toggle:hover,
+.password-input-toggle:focus-visible {
+    background: var(--surface);
+    color: var(--text)
 }
 
 .user-actions .icon-btn + .icon-btn {
@@ -1142,13 +1329,13 @@ th[aria-sort="descending"] .table-sort svg,
 @media(max-width:760px) {
 
     .users-page {
-        height: calc(100vh - 90px);
-        height: calc(100dvh - 90px)
+        height: calc(100vh - 24px);
+        height: calc(100dvh - 24px)
     }
 
     .home-page {
-        height: calc(100vh - 90px);
-        height: calc(100dvh - 90px)
+        height: calc(100vh - 24px);
+        height: calc(100dvh - 24px)
     }
 
     .summary-metrics {
@@ -1169,13 +1356,18 @@ th[aria-sort="descending"] .table-sort svg,
     }
 
     .lookups-page {
-        height: calc(100vh - 90px);
-        height: calc(100dvh - 90px)
+        height: calc(100vh - 24px);
+        height: calc(100dvh - 24px)
+    }
+
+    .passwords-page {
+        height: calc(100vh - 24px);
+        height: calc(100dvh - 24px)
     }
 
     .transactions-page {
-        height: calc(100vh - 90px);
-        height: calc(100dvh - 90px)
+        height: calc(100vh - 24px);
+        height: calc(100dvh - 24px)
     }
 
     .users-toolbar {
@@ -1184,6 +1376,11 @@ th[aria-sort="descending"] .table-sort svg,
     }
 
     .lookups-toolbar {
+        align-items: stretch;
+        flex-direction: column
+    }
+
+    .passwords-toolbar {
         align-items: stretch;
         flex-direction: column
     }

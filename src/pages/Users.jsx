@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpDown, Check, ChevronDown, ChevronLeft, ChevronRight, Filter, Pencil, Plus, Search, UserRound, UserRoundCheck, UserX, X } from 'lucide-react';
 import { usersApi } from '../services/api';
+import useAutoPageSize from '../hooks/useAutoPageSize';
 
 const formatDate = (value) => {
   if (!value) return '—';
@@ -22,7 +23,7 @@ export default function Users() {
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [page, setPage] = useState(1);
-  const rowsPerPage = 10;
+  const [tableWrapRef, rowsPerPage] = useAutoPageSize();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -68,7 +69,7 @@ export default function Users() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [dialogOpen]);
 
-  useEffect(() => { load(debouncedSearch, statusFilter, page); }, [debouncedSearch, statusFilter, sortBy, sortOrder, page]);
+  useEffect(() => { load(debouncedSearch, statusFilter, page); }, [debouncedSearch, statusFilter, sortBy, sortOrder, page, rowsPerPage]);
 
   const openCreateDialog = () => {
     setEditingUser(null);
@@ -145,7 +146,7 @@ export default function Users() {
   const sortLabel = (field) => sortBy === field && sortOrder === 'desc' ? 'descending' : 'ascending';
 
   const total = Number(data.pagination?.total) || 0;
-  const pageSize = Number(data.pagination?.size) || 10;
+  const pageSize = Number(data.pagination?.size) || rowsPerPage;
   const currentPage = Number(data.pagination?.page) || page;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const firstResult = total ? (currentPage - 1) * pageSize + 1 : 0;
@@ -169,7 +170,7 @@ export default function Users() {
     </div>
     {error && <div className="inline-error users-error" role="alert">{error}</div>}
     <div className="table-card">
-      <div className="table-wrap"><table>
+      <div className="table-wrap" ref={tableWrapRef}><table>
         <thead><tr>
           <th aria-sort={sortBy === 'name' ? sortOrder === 'asc' ? 'ascending' : 'descending' : 'none'}><button type="button" className="table-sort" aria-label={`Sort by name ${sortLabel('name')}`} onClick={() => changeSort('name')}><span>User</span>{sortIcon('name')}</button></th>
           <th>Email</th><th>Status</th>
@@ -177,10 +178,10 @@ export default function Users() {
           <th>Actions</th>
         </tr></thead>
         {!loading && data.data?.length ? <tbody>{data.data.map(user => <tr key={user._id}>
-            <td><div className="user-cell"><span className="avatar small"><UserRound size={14}/></span><strong>{user.name || user.user_name || '—'}</strong></div></td>
-            <td>{user.email || '—'}</td>
-            <td><span className={`status ${user.is_active === false ? 'inactive' : 'active'}`}>{user.is_active === false ? 'Inactive' : 'Active'}</span></td>
-            <td>{formatDate(user._updated_on)}</td>
+            <td title={user.name || user.user_name || '—'}><div className="user-cell"><span className="avatar small"><UserRound size={14}/></span><strong>{user.name || user.user_name || '—'}</strong></div></td>
+            <td title={user.email || '—'}>{user.email || '—'}</td>
+            <td title={user.is_active === false ? 'Inactive' : 'Active'}><span className={`status ${user.is_active === false ? 'inactive' : 'active'}`}>{user.is_active === false ? 'Inactive' : 'Active'}</span></td>
+            <td title={formatDate(user._updated_on)}>{formatDate(user._updated_on)}</td>
             <td className="user-actions">
               <button className="icon-btn user-action-edit" title="Edit user" aria-label={`Edit ${user.name || user.email}`} onClick={() => openEditDialog(user)}><Pencil size={16}/></button>
               {user.is_active === false
