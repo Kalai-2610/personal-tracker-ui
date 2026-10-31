@@ -186,6 +186,7 @@ export default function Passwords() {
     setSaving(true);
     setDialogError('');
     try {
+      payload.website || delete payload.website;
       if (form.password) payload.password = await encryptWithStoredPublicKey(form.password);
       if (editingPassword) await passwordsApi.update(idValue(editingPassword._id), payload);
       else await passwordsApi.create(payload);
