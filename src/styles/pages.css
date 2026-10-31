@@ -1070,13 +1070,13 @@ table {
 .transaction-table-card th:nth-child(8) { width: 9% }
 .transaction-table-card th:nth-child(9) { width: 8% }
 
-.password-table-card th:nth-child(1) { width: 18% }
-.password-table-card th:nth-child(2) { width: 10% }
-.password-table-card th:nth-child(3) { width: 24% }
-.password-table-card th:nth-child(4) { width: 17% }
-.password-table-card th:nth-child(5) { width: 13% }
+.password-table-card th:nth-child(1) { width: 20% }
+.password-table-card th:nth-child(2) { width: 8% }
+.password-table-card th:nth-child(3) { width: 20% }
+.password-table-card th:nth-child(4) { width: 20% }
+.password-table-card th:nth-child(5) { width: 8% }
 .password-table-card th:nth-child(6) { width: 10% }
-.password-table-card th:nth-child(7) { width: 8% }
+.password-table-card th:nth-child(7) { width: 14% }
 
 tbody tr {
     height: 52px
